@@ -1,2 +1,2 @@
-http://arduino.esp8266.com/stable/package_esp8266com_index.json //nodeMCU //publisher
-https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json //esp32 //subscriber
+http://arduino.esp8266.com/stable/package_esp8266com_index.json //nodeMCU
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json //esp32

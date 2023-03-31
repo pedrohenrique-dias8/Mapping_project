@@ -8,111 +8,107 @@ const char* PASSWORD = "jujubademorango";
 WiFiClient wifiClient; 
 
 //MQTT Server
-const char* BROKER_MQTT = "iot.eclipse.org";
+const char* BROKER_MQTT = "test.mosquitto.org";
 int BROKER_PORT = 1883;
 
 
-#define ID_MQTT "BCI01"
-#define TOPIC_PUBLISH "BCIBotao1"
+#define ID_MQTT "Pmpp01"
+#define TOPIC_PUBLISH "PmppBotao1"
 PubSubClient MQTT(wifiClient);
 
 
-//funcoes
-void mantemConexoes();
-void conectaWifi();
-void conectaMQTT();
-void enviaValores();
+//Declaração das Funções
+void mantemConexoes();  //Garante que as conexoes com WiFi e MQTT Broker se mantenham ativas
+void conectaWiFi();     //Faz conexão com WiFi
+void conectaMQTT();     //Faz conexão com Broker MQTT
+void enviaPacote();     //
 
 void setup() {
-  // put your setup code here, to run once:
-  pinMode(botao, INPUT_PULLUP);
+  pinMode(pinBotao1, INPUT_PULLUP);         
 
   Serial.begin(115200);
 
-
-  conectaWifi();
-  MQTT.setServer(BROKER_MQTT, BROKER_PORT);
-  
+  conectaWiFi();
+  MQTT.setServer(BROKER_MQTT, BROKER_PORT);   
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
   mantemConexoes();
   enviaValores();
   MQTT.loop();
-
 }
 
-void mantemConexoes(){
-  if (!MQTT.connected()){
-      conectaMQTT();
+void mantemConexoes() {
+    if (!MQTT.connected()) {
+       conectaMQTT(); 
     }
-  conectaWifi();
+    
+    conectaWiFi(); //se não há conexão com o WiFI, a conexão é refeita
+}
+
+void conectaWiFi() {
+
+  if (WiFi.status() == WL_CONNECTED) {
+     return;
   }
-
-void conectaWifi(){
-
-  if (WiFi.status() == WL_CONNECTED){
-    return;
-    }
-  
-  Serial.print("Conectando-se a rede:  ");
+        
+  Serial.print("Conectando-se na rede: ");
   Serial.print(SSID);
-  Serial.print("  Aguarde!");
+  Serial.println("  Aguarde!");
 
-  WiFi.begin(SSID, PASSWORD);
+  WiFi.begin(SSID, PASSWORD); // Conecta na rede WI-FI  
   while (WiFi.status() != WL_CONNECTED) {
-    delay(100);
-    Serial.print(".");
-    }
-
-    Serial.println();
-    Serial.print("Conctado com sucesso na rede: ");
-    Serial.print(SSID);
-    Serial.print("  IP obtido:  ");
-    Serial.print(WiFi.localIP());
-  }
-
-void conectaMQQT(){
-  while(!MQTT.connected()) {
-    Serial.print("Conectando ao Broker MQTT:  ");
-    Serial.println(BROKER_MQTT);
-    if (MQTT.connect(ID_MQTT)){
-        Serial.println("Conectado ao Broker com sucesso!");
-      }
-    else {
-        Serial.println("Nao foi possivel se conectar o broker!");
-        Serial.println("Tentando novamente em 10 segundos");
-        delay(10000);
-      }  
-    }
-  
+      delay(100);
+      Serial.print(".");
   }
   
-void enviaValores(){
-  
-  static bool estadoBotao = HIGH;
-  static bool estadoBotaoAnt = HIGH;
-  static unsigned long debounceBotao;
+  Serial.println();
+  Serial.print("Conectado com sucesso, na rede: ");
+  Serial.print(SSID);  
+  Serial.print("  IP obtido: ");
+  Serial.println(WiFi.localIP()); 
+}
 
-  estadoBotao = digitalRead(botao);
-  if ( (millis() - debounceBotao) > 30 ){
-      if (!estadoBotao && estadoBotaoAnt){
+void conectaMQTT() { 
+    while (!MQTT.connected()) {
+        Serial.print("Conectando ao Broker MQTT: ");
+        Serial.println(BROKER_MQTT);
+        if (MQTT.connect(ID_MQTT)) {
+            Serial.println("Conectado ao Broker com sucesso!");
+        } 
+        else {
+            Serial.println("Noo foi possivel se conectar ao broker.");
+            Serial.println("Nova tentatica de conexao em 10s");
+            delay(10000);
+        }
+    }
+}
 
-        //botao apertado
+void enviaValores() {
+static bool estadoBotao1 = HIGH;
+static bool estadoBotao1Ant = HIGH;
+static unsigned long debounceBotao1;
+
+  estadoBotao1 = digitalRead(pinBotao1);
+  if (  (millis() - debounceBotao1) > 30 ) {  //Elimina efeito Bouncing
+     if (!estadoBotao1 && estadoBotao1Ant) {
+
+        //Botao Apertado     
         MQTT.publish(TOPIC_PUBLISH, "1");
-        Serial.println("Botao apertado, pacote enviado!");
+        Serial.println("Botao1 APERTADO. Payload enviado.");
+        
+        debounceBotao1 = millis();
+     } else if (estadoBotao1 && !estadoBotao1Ant) {
 
-
-        debounceBotao = millis();
-        }else if (estadoBotao && !estadoBotaoAnt){
-
-        //botao solto
+        //Botao Solto
         MQTT.publish(TOPIC_PUBLISH, "0");
-        Serial.println("Botao apertado, pacote enviado!");
-
-        debounceBotao = millis();  
-          }
-    }
-  estadoBotaoAnt = estadoBotao;
+        Serial.println("Botao1 SOLTO. Payload enviado.");
+        
+        debounceBotao1 = millis();
+     }
+     
   }
+  estadoBotao1Ant = estadoBotao1;
+}
+
+
